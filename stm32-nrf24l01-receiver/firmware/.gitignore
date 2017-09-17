@@ -1,0 +1,9 @@
+*
+!*/
+!*.h
+!*.c
+!*.s
+!*.hex
+!*.uvopt
+!*.uvproj
+!.gitignore
