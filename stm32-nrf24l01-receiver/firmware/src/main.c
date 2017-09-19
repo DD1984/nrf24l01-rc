@@ -15,6 +15,11 @@
 #include "rc_receiver.h"
 
 
+#define IWDG_REFRESH        0x0000AAAA
+#define IWDG_START          0x0000CCCC
+#define IWDG_WRITE_ACCESS   0x00005555
+
+
 // Global flag that is true for one mainloop every __SYSTICK_IN_MS
 bool systick;
 static volatile uint32_t systick_count;
@@ -205,9 +210,29 @@ void delay_us(uint32_t microseconds)
     }
 }
 
+
+// ****************************************************************************
+void startWatchdog (uint16_t ms)
+{
+    uint32_t reload = ((uint32_t)ms * LSI_VALUE)/(1000 * 32);
+    IWDG->KR = IWDG_START;
+    IWDG->KR = IWDG_WRITE_ACCESS;
+    IWDG->PR = IWDG_PR_PR_0 | IWDG_PR_PR_1; /* divider = 32 */
+    IWDG->RLR = IWDG_RLR_RL & reload;
+    while (IWDG->SR) {};
+    IWDG->KR = IWDG_REFRESH;
+}
+
+// ****************************************************************************
+void resetWatchdog (void)
+{
+    IWDG->KR = IWDG_REFRESH;
+}
+
 // ****************************************************************************
 int main(void)
 {
+    startWatchdog(200);
     init_hardware();
     init_spi();
     init_hardware_final();
@@ -218,6 +243,7 @@ int main(void)
 
     while (1)
     {
+        resetWatchdog();
         service_systick();
         process_receiver();
     }
