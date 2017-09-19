@@ -9,6 +9,9 @@ Two variants are provided:
 - [lpc812-nrf24l01](lpc812-nrf24l01-receiver/): NRF24L01+ module plus a [NXP LPC812](http://www.nxp.com/products/microcontrollers/cortex_m0_m0/series/LPC800.html) MCU
 - [nrf24le1](nrf24le1-receiver/): Using a NRF24LE1 module (integrated 8051 MCU)
 
+**Now the third variant is available:**
+
+- [stm32-nrf24l01](stm32-nrf24l01-receiver/): NRF24L01+ module plus a cheap STM32F030F4P6 MCU
 
 Technical information about the inner working of the receivers can be found
 in **[hkr3000-info.md](doc/hkr3000-info.md)**.
@@ -45,3 +48,16 @@ Downsides:
 - For the PCB provided in this project you need to get the NRF24LE1 module version that has an SMD crystal (size 21 x 15 mm)
 
 The NRF24LE1 firmware included in this project can be compiled to be compatible with the HKR3000 and XR3100 hardware. However, since those receivers use the OTP version (NRF24LE1G) one would have to replace the chip with the NR24LE1E versions to be able to use it.
+
+
+## Advantages of the NRF24L01+ - STM32F0 version
+
+- Cheap and easily accessible MCU
+- Free version of Keil MDK for STM32F0
+- precise PWM due to hardware timer
+- PWM frequency up to 200 Hz independ for CH1 and CH2/CH3
+- One sided PCB with two jumper wire only
+
+Downsides:
+
+- 3 channel PWM output only
