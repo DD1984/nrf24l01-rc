@@ -94,8 +94,7 @@ static uint16_t stickdata2ms(uint16_t stickdata)
 
     // ms = (0xffff - stickdata) * 3 / 4;
     ms = (0xffff - stickdata);
-    ms = (2100 - 900)*(ms - 1210)/(2750 - 1210);
-    ms += 900;
+    ms = ((2100 - 900)*(ms)/(2750 - 1210) + 900) - (2100 - 900)*(1210)/(2750 - 1210);
     
     return ms & 0xffff;
 }
