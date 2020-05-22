@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "stm32f0xx.h"
 #include "platform.h"
 #include "rc_receiver.h"
 #include "persistent_storage.h"

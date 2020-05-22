@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "stm32f0xx.h"
 #include "platform.h"
 #include "spi.h"
 
