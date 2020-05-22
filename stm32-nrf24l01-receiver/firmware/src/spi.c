@@ -11,6 +11,15 @@ void init_spi(void)
 {
     RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
     
+#ifdef STM32F1
+    SPI1->CR1 = SPI_CR1_MSTR |
+                SPI_CR1_BR_1 |				// Baud Rate - div by 8 24/8 = 3mhz
+                SPI_CR1_SPE |				// Peripheral enabled
+                SPI_CR1_SSI |				// Internal slave select
+                SPI_CR1_SSM ;				// Software slave management
+
+#else
+
     SPI1->CR1 = 0;
     SPI1->CR2 = SPI_CR2_FRXTH |				// RXNE event is generated if the FIFO level is greater than or equal to 1/4 (8-bit)
                 SPI_CR2_DS_0 |				// Data Size: 0b0111 - 8 bit
@@ -21,6 +30,7 @@ void init_spi(void)
                 SPI_CR1_SPE |				// Peripheral enabled
                 SPI_CR1_SSI |				// Internal slave select
                 SPI_CR1_SSM ;				// Software slave management
+#endif
 }
 
 

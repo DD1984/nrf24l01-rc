@@ -80,9 +80,11 @@ static void initialize_failsafe(void) {
 // ****************************************************************************
 static void output_pulses(void)
 {
+#if 0
     TIM14->CCR1 = 2 * channels[0];
     TIM1->CCR3  = 2 * channels[1];
     TIM1->CCR2  = 2 * channels[2];
+#endif
 }
 
 
