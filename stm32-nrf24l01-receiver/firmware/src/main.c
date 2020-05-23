@@ -122,6 +122,9 @@ static void init_hardware(void)
     GPIOA->CRL &= ~(GPIO_CRL_CNF4 | GPIO_CRL_MODE4);
     GPIOA->CRL |= GPIO_CRL_CNF4_1; //input push-pull
     GPIOA->BSRR = GPIO_BSRR_BS4; //pull up
+    //PA9, PA10
+    GPIOA->CRH &= ~(GPIO_CRH_CNF9 | GPIO_CRH_MODE9 | GPIO_CRH_CNF10 | GPIO_CRH_MODE10);
+    GPIOA->CRH |= GPIO_CRH_CNF9_1 | GPIO_CRH_MODE9_0 | GPIO_CRH_CNF10_1 | GPIO_CRH_MODE10_0; //10mhz alt push-pull
 
 #else
 
@@ -165,9 +168,14 @@ static void init_hardware(void)
     TIM14->EGR = TIM_EGR_UG;	//	generate event and reload PSC
     while ((TIM14->SR & TIM_SR_UIF) == 0){}
     TIM14->SR = 0;
+#endif
     
     RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;   
+#ifdef STM32F1
+    TIM1->PSC = (SystemCoreClock / 1000000 / 2 - 1); /* Ftim = 2 Mhz */
+#else
     TIM1->PSC = (24-1); /* Ftim = 2 Mhz */
+#endif
     TIM1->ARR = ((2000000/CH2_CH3_FREQUENCY) - 1);
     TIM1->CCR2 = 2*1500; /* width = 1.5 ms */
     TIM1->CCR3 = 2*1500; /* width = 1.5 ms */
@@ -179,7 +187,6 @@ static void init_hardware(void)
     TIM1->EGR = TIM_EGR_UG;	//	generate event and reload PSC
     while ((TIM1->SR & TIM_SR_UIF) == 0){}
     TIM1->SR = 0;
-#endif
     
     /* hop Timer config */
     RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
