@@ -8,3 +8,4 @@
 !*.uvproj
 !.gitignore
 !Makefile
+!*.ld
