@@ -13,6 +13,9 @@ Two variants are provided:
 
 - [stm32-nrf24l01](stm32-nrf24l01-receiver/): NRF24L01+ module plus a cheap STM32F030F4P6 MCU
 
+**Fourth variant is available:**
+- [stm32-nrf24l01](stm32-nrf24l01-receiver/): NRF24L01+ module (smd mount) plus a STM32F100C4T6 MCU
+
 Technical information about the inner working of the receivers can be found
 in **[hkr3000-info.md](doc/hkr3000-info.md)**.
 
