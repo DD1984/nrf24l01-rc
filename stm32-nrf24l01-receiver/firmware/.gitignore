@@ -4,8 +4,11 @@
 !*.c
 !*.s
 !*.hex
+!*.bin
 !*.uvopt
 !*.uvproj
 !.gitignore
 !Makefile
 !*.ld
+!*.brd
+!*.sch
