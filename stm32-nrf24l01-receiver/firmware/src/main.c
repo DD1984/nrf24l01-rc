@@ -46,7 +46,7 @@ static void service_systick(void)
 
 // ****************************************************************************
 #ifdef STM32F1
-void EXTI2_IRQHandler (void)
+void EXTI0_IRQHandler (void)
 #else
 void EXTI2_3_IRQHandler (void)
 #endif
@@ -54,11 +54,20 @@ void EXTI2_3_IRQHandler (void)
     uint32_t status = EXTI->PR;
     uint32_t pending = 0;
 
+#ifdef STM32F1
+    if (status & EXTI_PR_PR0)
+    {
+        pending |= EXTI_PR_PR0;
+        rf_interrupt_handler();
+    }
+#else
     if (status & EXTI_PR_PR2)
     {
         pending |= EXTI_PR_PR2;
         rf_interrupt_handler();
+        //GPIO_LED_ON();
     }
+#endif
 
     EXTI->PR = pending;
 }
@@ -88,6 +97,57 @@ void SysTick_Handler (void)
 // ****************************************************************************
 static void init_hardware(void)
 {
+#ifdef STM32F1
+    /**
+     * PB14    - LED
+     * PB12    - BIND
+     *
+     * PA4     - NRF_CSN
+     * PA3     - NRF_CE
+     * PB0     - NRF_IRQ
+     * PA5     - NRF_SCK
+     * PA6     - NRF_MISO
+     * PA7     - NRF_MOSI
+     *
+     * PA11    - CH1 - TIM1_CH4
+     * PA10    - CH2 - TIM1_CH3
+     * PA9     - CH3 - TIM1_CH2
+     * PA8     - CH4 - TIM1_CH1 - for future use
+     */
+    /* GPIO config */
+    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_IOPBEN | RCC_APB2ENR_IOPCEN | RCC_APB2ENR_AFIOEN;
+    //PB14 - LED
+    GPIOB->CRH &= ~(GPIO_CRH_CNF14 | GPIO_CRH_MODE14);
+    GPIOB->CRH |= GPIO_CRH_MODE14_1; //2mhz out push-pull
+    //PB12 - BIND
+    GPIOB->CRH &= ~(GPIO_CRH_CNF12 | GPIO_CRH_MODE12);
+    GPIOB->CRH |= GPIO_CRH_CNF12_1; //input push-pull
+    GPIOB->BSRR = GPIO_BSRR_BS12; //pull up
+
+    //PA4 - NRF_CSN, PA3 - NRF_CE
+    GPIOA->CRL &= ~(GPIO_CRL_CNF4 | GPIO_CRL_MODE4 | GPIO_CRL_CNF3 | GPIO_CRL_MODE3);
+    GPIOA->CRL |= GPIO_CRL_MODE4_0 | GPIO_CRL_MODE3_0; //10mhz out push-pull
+    //PB0 - NRF_IRQ
+    GPIOB->CRL &= ~(GPIO_CRL_CNF0 | GPIO_CRL_MODE0);
+    GPIOB->CRL |= GPIO_CRL_CNF0_1; //input push-pull
+    GPIOB->BSRR = GPIO_BSRR_BS0; //pull up
+
+    //PA5, PA7, PA6 - floating input
+    GPIOA->CRL &= ~(GPIO_CRL_CNF5 | GPIO_CRL_MODE5 | GPIO_CRL_CNF7 | GPIO_CRL_MODE7);
+    GPIOA->CRL |= GPIO_CRL_CNF5_1 | GPIO_CRL_MODE5_0 | GPIO_CRL_CNF7_1 | GPIO_CRL_MODE7_0; //10mhz alt push-pull
+
+    //PA11, PA10, PA9, PA8
+    GPIOA->CRH &= ~(GPIO_CRH_CNF11 | GPIO_CRH_MODE11
+                 | GPIO_CRH_CNF10 | GPIO_CRH_MODE10
+                 | GPIO_CRH_CNF9 | GPIO_CRH_MODE9
+                 | GPIO_CRH_CNF8 | GPIO_CRH_MODE8);
+    GPIOA->CRH |= GPIO_CRH_CNF11_1 | GPIO_CRH_MODE11_0
+               | GPIO_CRH_CNF10_1 | GPIO_CRH_MODE10_0
+               | GPIO_CRH_CNF9_1 | GPIO_CRH_MODE9_0
+               | GPIO_CRH_CNF8_1 | GPIO_CRH_MODE8_0; //10mhz alt push-pull
+
+#else
+
     /**
      * PA0     - NRF_CSN
      * PA1     - NRF_CE
@@ -101,33 +161,6 @@ static void init_hardware(void)
      * PA10    - CH2 - TIM1_CH3
      * PB1     - CH1 - TIM14_CH1
      */
-
-#ifdef STM32F1
-    /* GPIO config */
-    RCC->APB2ENR |= RCC_APB2ENR_IOPAEN | RCC_APB2ENR_IOPBEN | RCC_APB2ENR_IOPCEN | RCC_APB2ENR_AFIOEN;
-    //PC8 - LED
-    GPIOC->CRH &= ~(GPIO_CRH_CNF8 | GPIO_CRH_MODE8);
-    GPIOC->CRH |= GPIO_CRH_MODE8_1; //2mhz out push-pull
-    //PA0, PA1
-    GPIOA->CRL &= ~(GPIO_CRL_CNF0 | GPIO_CRL_MODE0 | GPIO_CRL_CNF1 | GPIO_CRL_MODE1);
-    GPIOA->CRL |= GPIO_CRL_MODE0_0 | GPIO_CRL_MODE1_0; //10mhz out push-pull
-    //PA2
-    GPIOA->CRL &= ~(GPIO_CRL_CNF2 | GPIO_CRL_MODE2);
-    GPIOA->CRL |= GPIO_CRL_CNF2_1; //input push-pull
-    GPIOA->BSRR = GPIO_BSRR_BS2; //pull up
-    //PA5, PA7, PA6 - floating input
-    GPIOA->CRL &= ~(GPIO_CRL_CNF5 | GPIO_CRL_MODE5 | GPIO_CRL_CNF7 | GPIO_CRL_MODE7);
-    GPIOA->CRL |= GPIO_CRL_CNF5_1 | GPIO_CRL_MODE5_0 | GPIO_CRL_CNF7_1 | GPIO_CRL_MODE7_0; //10mhz alt push-pull
-    //PA4
-    GPIOA->CRL &= ~(GPIO_CRL_CNF4 | GPIO_CRL_MODE4);
-    GPIOA->CRL |= GPIO_CRL_CNF4_1; //input push-pull
-    GPIOA->BSRR = GPIO_BSRR_BS4; //pull up
-    //PA9, PA10
-    GPIOA->CRH &= ~(GPIO_CRH_CNF9 | GPIO_CRH_MODE9 | GPIO_CRH_CNF10 | GPIO_CRH_MODE10);
-    GPIOA->CRH |= GPIO_CRH_CNF9_1 | GPIO_CRH_MODE9_0 | GPIO_CRH_CNF10_1 | GPIO_CRH_MODE10_0; //10mhz alt push-pull
-
-#else
-
     /* GPIO config */
     RCC->AHBENR |= RCC_AHBENR_GPIOAEN | RCC_AHBENR_GPIOBEN;
 
@@ -150,14 +183,23 @@ static void init_hardware(void)
 #endif
 
     /* EXTI config */
+#ifdef STM32F1
+    AFIO->EXTICR[0] &= ~(AFIO_EXTICR1_EXTI0);
+    AFIO->EXTICR[0] |=   AFIO_EXTICR1_EXTI0_PB;
+
+    EXTI->FTSR |= EXTI_FTSR_TR0; /* Falling trigger event configuration */
+    EXTI->IMR  |= EXTI_IMR_MR0;  /* Interrupt Mask on line 0 */
+#else
     SYSCFG->EXTICR[0] &= ~(SYSCFG_EXTICR1_EXTI2);
     SYSCFG->EXTICR[0] |=   SYSCFG_EXTICR1_EXTI2_PA;
  
     EXTI->FTSR |= EXTI_FTSR_TR2; /* Falling trigger event configuration */
     EXTI->IMR  |= EXTI_IMR_MR2;  /* Interrupt Mask on line 2 */
+#endif
+
 
     /* PWM Timers config */
-#if 0
+#ifndef STM32F1
     RCC->APB1ENR |= RCC_APB1ENR_TIM14EN;
     TIM14->PSC = (24-1); /* Ftim = 2 Mhz */
     TIM14->ARR = ((2000000/CH1_FREQUENCY) - 1);
@@ -173,15 +215,28 @@ static void init_hardware(void)
     RCC->APB2ENR |= RCC_APB2ENR_TIM1EN;   
 #ifdef STM32F1
     TIM1->PSC = (SystemCoreClock / 1000000 / 2 - 1); /* Ftim = 2 Mhz */
+    TIM1->ARR = ((2000000/CH2_CH3_FREQUENCY) - 1);
+    TIM1->CCR1 = TIM1->CCR2 = TIM1->CCR3= TIM1->CCR4 = 2*1500; /* width = 1.5 ms */
+
+    TIM1->CCMR1 = TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1PE
+                | TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2PE;
+
+    TIM1->CCMR2 = TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3PE
+                | TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1 | TIM_CCMR2_OC4PE;
+
+    TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E | TIM_CCER_CC4E;
+
 #else
+
     TIM1->PSC = (24-1); /* Ftim = 2 Mhz */
-#endif
     TIM1->ARR = ((2000000/CH2_CH3_FREQUENCY) - 1);
     TIM1->CCR2 = 2*1500; /* width = 1.5 ms */
     TIM1->CCR3 = 2*1500; /* width = 1.5 ms */
     TIM1->CCMR1 = TIM_CCMR1_OC2M_2 | TIM_CCMR1_OC2M_1 | TIM_CCMR1_OC2PE;
     TIM1->CCMR2 = TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3PE;
     TIM1->CCER = TIM_CCER_CC2E | TIM_CCER_CC3E;
+#endif
+
     TIM1->BDTR = TIM_BDTR_MOE;
     TIM1->CR1 |= TIM_CR1_CEN;
     TIM1->EGR = TIM_EGR_UG;	//	generate event and reload PSC
@@ -225,8 +280,8 @@ static void init_hardware_final(void)
 #ifdef STM32F1
     SysTick_Config(SystemCoreClock / 1000 *__SYSTICK_IN_MS); // need /8 ???
 
-    NVIC_SetPriority(EXTI2_IRQn, 0);
-    NVIC_EnableIRQ(EXTI2_IRQn);
+    NVIC_SetPriority(EXTI0_IRQn, 0);
+    NVIC_EnableIRQ(EXTI0_IRQn);
 
 #else
 
