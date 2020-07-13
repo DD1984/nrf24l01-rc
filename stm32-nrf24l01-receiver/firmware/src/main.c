@@ -13,6 +13,12 @@
 #include "spi.h"
 #include "rc_receiver.h"
 
+#ifdef ESC
+#include "esc.h"
+#include "tune.h"
+#include "adc.h"
+#endif
+
 
 #define IWDG_REFRESH        0x0000AAAA
 #define IWDG_START          0x0000CCCC
@@ -94,12 +100,14 @@ void SysTick_Handler (void)
     }
 }
 
+
 // ****************************************************************************
 static void init_hardware(void)
 {
 #ifdef STM32F1
     /**
      * PB14    - LED
+     * PB13    - BAT CALIBR
      * PB12    - BIND
      *
      * PA4     - NRF_CSN
@@ -123,6 +131,12 @@ static void init_hardware(void)
     GPIOB->CRH &= ~(GPIO_CRH_CNF12 | GPIO_CRH_MODE12);
     GPIOB->CRH |= GPIO_CRH_CNF12_1; //input push-pull
     GPIOB->BSRR = GPIO_BSRR_BS12; //pull up
+#ifdef ESC
+    //PB13 - BAT CALIBR
+    GPIOB->CRH &= ~(GPIO_CRH_CNF13 | GPIO_CRH_MODE13);
+    GPIOB->CRH |= GPIO_CRH_CNF13_1; //input push-pull
+    GPIOB->BSRR = GPIO_BSRR_BS13; //pull up
+#endif
 
     //PA4 - NRF_CSN, PA3 - NRF_CE
     GPIOA->CRL &= ~(GPIO_CRL_CNF4 | GPIO_CRL_MODE4 | GPIO_CRL_CNF3 | GPIO_CRL_MODE3);
@@ -145,6 +159,7 @@ static void init_hardware(void)
                | GPIO_CRH_CNF10_1 | GPIO_CRH_MODE10_0
                | GPIO_CRH_CNF9_1 | GPIO_CRH_MODE9_0
                | GPIO_CRH_CNF8_1 | GPIO_CRH_MODE8_0; //10mhz alt push-pull
+
 
 #else
 
@@ -224,7 +239,10 @@ static void init_hardware(void)
     TIM1->CCMR2 = TIM_CCMR2_OC3M_2 | TIM_CCMR2_OC3M_1 | TIM_CCMR2_OC3PE
                 | TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1 | TIM_CCMR2_OC4PE;
 
-    TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E | TIM_CCER_CC4E;
+    TIM1->CCER = TIM_CCER_CC1E  | TIM_CCER_CC3E | TIM_CCER_CC4E;
+#ifndef DEBUG
+    TIM1->CCER |= TIM_CCER_CC2E;
+#endif
 
 #else
 
@@ -271,6 +289,17 @@ static void init_hardware(void)
     TIM16->EGR = TIM_EGR_UG;	//	generate event and reload PSC
     while ((TIM16->SR & TIM_SR_UIF) == 0){}
     TIM16->SR = 0;
+
+#ifdef DEBUG
+    uart_init();
+#endif
+
+#ifdef ESC
+    pwm_timer_init();
+    adc_init();
+#endif
+
+
 }
 
 // ****************************************************************************
@@ -299,11 +328,13 @@ static void init_hardware_final(void)
 }
 
 // ****************************************************************************
+void resetWatchdog (void);
 void delay_us(uint32_t microseconds)
 {
     TIM16->SR = 0;
     while (microseconds)
     {
+        resetWatchdog();
         if (microseconds > 65535)
         {
             TIM16->CNT = 0;
@@ -346,6 +377,17 @@ int main(void)
     init_hardware();
     init_spi();
     init_hardware_final();
+
+    LOG("hello world\n");
+    
+#ifdef ESC
+    start_sound();
+    int bl = bat_level();
+    if (bl)
+        bat_beep(bl);
+    else
+        alarm_beep();
+#endif
     
     // Wait a for a short time after power up before talking to the nRF24
     delay_us(20000);

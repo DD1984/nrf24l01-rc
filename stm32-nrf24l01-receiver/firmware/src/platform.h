@@ -20,6 +20,14 @@
     #define FLASH_FKEY1 FLASH_KEY1
     #define FLASH_FKEY2 FLASH_KEY2
 
+#ifdef DEBUG
+#include "uart.h"
+#include <stdio.h>
+#define  LOG(format, args...) printf(format, ##args)
+#else
+#define  LOG(format, args...) {}
+#endif
+
 #else
 
 #include "stm32f0xx.h"

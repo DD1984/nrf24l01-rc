@@ -8,6 +8,7 @@ TARGET = firmware
 ######################################
 # Posibilities
 ######################################
+ESC=y
 
 ######################################
 # MCU
@@ -30,7 +31,7 @@ OPT = -Os
 ######################################
 # source
 ######################################
-C_SOURCES := src/main.c src/persistent_storage.c src/rc_receiver.c src/rf.c src/spi.c
+C_SOURCES := src/main.c src/persistent_storage.c src/rc_receiver.c src/rf.c src/spi.c src/crc.c
 C_SOURCES += startup/stm32f1/system_stm32f1xx.c
 
 
@@ -58,15 +59,21 @@ C_DEFS = -DSTM32F1 -DSTM32F100xB
 AS_INCLUDES = 
 C_INCLUDES = -I src -I startup/stm32f1 -I startup/stm32f1/CMSIS/Include
 
- 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -fdata-sections -ffunction-sections
+
 ifeq ($(DEBUG), 1)
-CFLAGS += -g -gdwarf-2
+    CFLAGS += -g -gdwarf-2 -DDEBUG
+    C_SOURCES += src/uart.c startup/stm32f1/syscalls.c
 endif
 # Generate dependency information
 CFLAGS += -MD -MP -MF .dep/$(@F).d
+
+ifeq ($(ESC),y)
+    CFLAGS += -DESC
+    C_SOURCES += src/esc.c src/tune.c src/adc.c
+endif
 
 #######################################
 # LDFLAGS

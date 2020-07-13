@@ -6,6 +6,9 @@
 #include "persistent_storage.h"
 #include "rf.h"
 
+#ifdef ESC
+#include "esc.h"
+#endif
 
 
 #define PAYLOAD_SIZE 10
@@ -81,9 +84,28 @@ static void initialize_failsafe(void) {
 static void output_pulses(void)
 {
 #ifdef STM32F1
+    // RUDDER, THROTTLE, CH5
     TIM1->CCR4 = 2 * channels[0];
     TIM1->CCR3 = 2 * channels[1];
     TIM1->CCR2 = 2 * channels[2];
+
+#ifdef ESC
+    pwm_mode_t pwm_mode;
+    uint16_t pwm_val;
+    if (channels[1] < SERVO_PULSE_CENTER) {
+        pwm_mode = BACKWARD;
+        pwm_val = SERVO_PULSE_CENTER - channels[1];
+    }
+    else {
+        pwm_mode = FORWARD;
+        pwm_val = channels[1] - SERVO_PULSE_CENTER;
+    }
+    if (pwm_val > 500)
+        pwm_val = 500;
+    pwm_val = pwm_val * (1 << PWM_RES) / 500;
+    pwm_run(pwm_mode, pwm_val);
+#endif
+    
 #else
     TIM14->CCR1 = 2 * channels[0];
     TIM1->CCR3  = 2 * channels[1];
@@ -314,7 +336,7 @@ static void process_binding(void)
                             bind_storage_area[19 + i] = payload[3 + i];
                         }
 
-                        save_persistent_storage(bind_storage_area);
+                        nvram_set(BIND_DATA, bind_storage_area);
                         parse_bind_data();
                         binding_done();
                         return;
@@ -545,7 +567,7 @@ static void process_led(void)
 // ****************************************************************************
 void init_receiver(void)
 {
-    load_persistent_storage(bind_storage_area);
+    nvram_get(BIND_DATA, bind_storage_area);
     parse_bind_data();
     initialize_failsafe();
 
