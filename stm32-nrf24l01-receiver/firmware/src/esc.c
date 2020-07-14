@@ -1,6 +1,8 @@
 #include "platform.h"
 #include "esc.h"
 
+pwm_mode_t int_pwm_mode;
+
 void pwm_gpio_cfg(pwm_mode_t mode) 
 {
     //PA0, PA1 reset mode
@@ -49,13 +51,13 @@ void pwm_run(pwm_mode_t mode, uint16_t level)
     if (mode != FORWARD && mode != BACKWARD)
         return;
 
+    pwm_stop();
+
     if (level < DEAD_GAP)
-        pwm_stop();
-    
-    if (level >= (1 << PWM_RES))
         return;
 
-    pwm_stop();
+    if (level > (1 << PWM_RES))
+        level = 1 << PWM_RES;
 
     TIM2->PSC = SystemCoreClock / PWM_FREQ / (1 << PWM_RES);
     TIM2->ARR = (1 << PWM_RES) - 1;

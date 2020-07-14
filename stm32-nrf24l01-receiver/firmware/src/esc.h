@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#define PWM_FREQ 4000
+#define PWM_FREQ 1000
 #define PWM_RES 7 //bit
 #define DEAD_GAP 10
 
