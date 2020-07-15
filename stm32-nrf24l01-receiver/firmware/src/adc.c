@@ -36,7 +36,7 @@ uint16_t get_adc_val(void)
 #define BAT_8_4v_18K_10K 3722
 #define BAT_6v_18K_10K   2656
 
-#define MAX_LEV 3
+#define MAX_LEV 4 // 1 alarm, 3 normal
 
 int bat_level(void)
 {
@@ -67,19 +67,24 @@ int bat_level(void)
         return 0;
 
     uint32_t bat_6v = adc_flash_val * BAT_6v_18K_10K / BAT_8_4v_18K_10K;
-    uint32_t delta = (adc_flash_val - bat_6v) / (MAX_LEV + 1);
+    uint32_t delta = (adc_flash_val - bat_6v) / MAX_LEV;
+    bat_6v = adc_flash_val - delta * MAX_LEV;
 
-    adc_val -= delta;
-    
+    LOG("adc: %d, delta: %d 6v: %d 8.4v: %d\n", adc_val, delta, bat_6v, adc_flash_val);
+
     if (adc_val < bat_6v)
         adc_val = bat_6v;
+    if (adc_val > adc_flash_val)
+        adc_val = adc_flash_val;
     
-    int level = (adc_val - bat_6v) / delta;
+    uint32_t tmp = bat_6v;
+    int level = 0;
+    while (!(adc_val >= tmp && adc_val <= tmp + delta)) {
+        level++;
+        tmp += delta;
+    }
 
-    if (level > MAX_LEV)
-        level =  MAX_LEV;
-
-    LOG("bl: %d, adc: %d, delta: %d 6v: %d\n", level, adc_val, delta, bat_6v);
+    LOG("bat level: %d\n", level);
 
     return level;
 }

@@ -146,9 +146,10 @@ static void init_hardware(void)
     GPIOB->CRL |= GPIO_CRL_CNF0_1; //input push-pull
     GPIOB->BSRR = GPIO_BSRR_BS0; //pull up
 
-    //PA5, PA7, PA6 - floating input
+    //PA5, PA7
     GPIOA->CRL &= ~(GPIO_CRL_CNF5 | GPIO_CRL_MODE5 | GPIO_CRL_CNF7 | GPIO_CRL_MODE7);
     GPIOA->CRL |= GPIO_CRL_CNF5_1 | GPIO_CRL_MODE5_0 | GPIO_CRL_CNF7_1 | GPIO_CRL_MODE7_0; //10mhz alt push-pull
+    //PA6 - floating input (do nothing)
 
     //PA11, PA10, PA9, PA8
     GPIOA->CRH &= ~(GPIO_CRH_CNF11 | GPIO_CRH_MODE11
